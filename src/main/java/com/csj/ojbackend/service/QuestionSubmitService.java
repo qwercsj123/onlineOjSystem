@@ -2,6 +2,7 @@ package com.csj.ojbackend.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.csj.ojbackend.model.dto.questionSubmit.OwnQuestionSubmitResponse;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitAddRequest;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitQueryRequest;
 import com.csj.ojbackend.model.entity.QuestionSubmit;
@@ -57,4 +58,8 @@ public interface QuestionSubmitService extends IService<QuestionSubmit> {
     Page<QuestionSubmitVO> getQuestionSubmitVOPage(Page<QuestionSubmit> questionSubmitPage, User loginUser);
 
 
+
+    OwnQuestionSubmitResponse getMySubmitted(long id);
+
+    String getRightAnswer(long id);
 }

@@ -68,6 +68,7 @@ public class JudgeServiceImp implements JudgeService {
         if (questionSubmit.getStatus().equals(QuestionSubmitStatusEnum.RUNNING.getValue())) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "改题目正在判题");
         }
+
         //先更新题目的状态
         QuestionSubmit questionSubmitUpdate = new QuestionSubmit();
         questionSubmitUpdate.setId(questionSubmitId);
@@ -77,22 +78,34 @@ public class JudgeServiceImp implements JudgeService {
         if(!update){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR,"题目状态更新错误");
         }
+
+
+
         //调用沙箱执行代码
         JudgeSandBox judgeSandBox = JudgeSandBoxFactory.getJudgeSandBox(type);
         JudgeSandBoxProxy judgeSandBoxProxy = new JudgeSandBoxProxy(judgeSandBox);
+
+
         String code = questionSubmit.getCode();
         String language = questionSubmit.getLanguage();
         String judgeCaseStr = question.getJudgeCase();
+
         List<JudgeCase> judgeCaseList = JSONUtil.toList(judgeCaseStr, JudgeCase.class);
+
         List<String> inputList = judgeCaseList.stream().map(JudgeCase::getInPut).collect(Collectors.toList());
+
 
         ExecuteSandCodeRequest executeSandCodeRequest = ExecuteSandCodeRequest.builder().
                 code(code).
                 language(language).
                 inputList(inputList).build();
+
+
         ExecuteSandCodeResponse executeSandCodeResponse = judgeSandBoxProxy.judge(executeSandCodeRequest);
         //executeSandCodeResponse就是执行的结果
         List<String> outputList = executeSandCodeResponse.getOutputList();
+
+
 
         //此处已经执行完了,下面的过程就是进行比较
         //1.比较输入和输出的个数是否相同
@@ -107,8 +120,10 @@ public class JudgeServiceImp implements JudgeService {
         judgeContext.setQuestion(question);
         judgeContext.setQuestionSubmit(questionSubmit);
         //此时输出的judgeInfo是最终的结果(已经比较过了和预期数据)
+
         DefaultJudge defaultJudge = new DefaultJudge();
         JudgeInfo judgeInfo = defaultJudge.judge(judgeContext);
+
         if(judgeInfo.getMemory()==0){
             judgeInfo.setMemory(10000l);
         }

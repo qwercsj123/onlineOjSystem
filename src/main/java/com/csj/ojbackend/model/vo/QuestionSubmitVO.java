@@ -62,6 +62,9 @@ public class QuestionSubmitVO implements Serializable {
      */
     private Date updateTime;
 
+
+    private String userName;
+
     /**
      * 提交用户信息
      */
@@ -117,6 +120,7 @@ public class QuestionSubmitVO implements Serializable {
         BeanUtils.copyProperties(questionSubmit, questionSubmitVO);
         String judgeInfoStr = questionSubmit.getJudgeInfo();
         questionSubmitVO.setJudgeInfo(JSONUtil.toBean(judgeInfoStr, JudgeInfo.class));
+        questionSubmitVO.setUserName("123");
         return questionSubmitVO;
     }
 

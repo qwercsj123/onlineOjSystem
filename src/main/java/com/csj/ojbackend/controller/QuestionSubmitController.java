@@ -5,18 +5,17 @@ import com.csj.ojbackend.common.BaseResponse;
 import com.csj.ojbackend.common.ErrorCode;
 import com.csj.ojbackend.common.ResultUtils;
 import com.csj.ojbackend.exception.BusinessException;
+import com.csj.ojbackend.model.dto.questionSubmit.OwnQuestionSubmitResponse;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitAddRequest;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitQueryRequest;
+import com.csj.ojbackend.model.entity.Question;
 import com.csj.ojbackend.model.entity.QuestionSubmit;
 import com.csj.ojbackend.model.entity.User;
 import com.csj.ojbackend.model.vo.QuestionSubmitVO;
 import com.csj.ojbackend.service.QuestionSubmitService;
 import com.csj.ojbackend.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -74,5 +73,32 @@ public class QuestionSubmitController {
 //    }
 
 
+    /**
+     * 根据 id 获取已经提交的题目
+     * @param id
+     * @return
+     */
+    @GetMapping("/get/My_questionById")
+    public BaseResponse<OwnQuestionSubmitResponse> getQuestionById(long id, HttpServletRequest request) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        OwnQuestionSubmitResponse mySubmitted = questionSubmitService.getMySubmitted(id);
+        if (mySubmitted == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(mySubmitted);
+    }
 
+    @GetMapping("/get/My_RightquestionById")
+    public BaseResponse<String> getQuestionById(long id) {
+        if (id <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        String answer = questionSubmitService.getRightAnswer(id);
+        if (answer == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        return ResultUtils.success(answer);
+    }
 }

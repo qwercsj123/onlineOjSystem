@@ -25,7 +25,7 @@ public class RemoteSandBox implements JudgeSandBox {
     @Override
     public ExecuteSandCodeResponse judge(ExecuteSandCodeRequest executeSandCodeRequest) {
         System.out.println("远程代码沙箱");
-        String url = "http://localhost:8090/api/executeCode";
+        String url = "http://8.152.203.125:8090/api/executeCode";
         String json = JSONUtil.toJsonStr(executeSandCodeRequest);
         String responseStr = HttpUtil.createPost(url)
                 .header(AUTH_REQUEST_HEADER, AUTH_REQUEST_SECRET)

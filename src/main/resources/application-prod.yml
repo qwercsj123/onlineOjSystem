@@ -1,12 +1,12 @@
 # 线上配置文件
 server:
-  port: 8101
+  port: 8201
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://8.130.22.65:3306/oj?serverTimezone=Asia/Shanghai
-    username: user
-    password: chenshijie123
+    url:
+    username:
+    password:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: false

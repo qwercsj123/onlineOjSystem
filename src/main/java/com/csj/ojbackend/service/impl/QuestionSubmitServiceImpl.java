@@ -6,6 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.csj.ojbackend.common.ErrorCode;
 import com.csj.ojbackend.constant.CommonConstant;
 import com.csj.ojbackend.exception.BusinessException;
+import com.csj.ojbackend.model.dto.question.JudgeCase;
+import com.csj.ojbackend.model.dto.question.JudgeConfig;
+import com.csj.ojbackend.model.dto.questionSubmit.OwnQuestionSubmitResponse;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitAddRequest;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitQueryRequest;
 import com.csj.ojbackend.model.entity.*;
@@ -26,9 +29,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -85,6 +86,7 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         Long questionSubmitId = questionSubmit.getId();
 //         执行判题服务
         CompletableFuture.runAsync(() -> {
+            //用消息队列来实现
             judgeService.doJudge(questionSubmitId);
         });
 
@@ -145,22 +147,47 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         if (CollectionUtils.isEmpty(questionSubmitList)) {
             return questionSubmitVOPage;
         }
+
         // 1. 关联查询用户信息
-        Set<Long> userIdSet = questionSubmitList.stream().map(QuestionSubmit::getUserId).collect(Collectors.toSet());//查出所有的用户的id
+//        Set<Long> userIdSet = questionSubmitList.stream().map(questionSubmit -> {
+//            boolean admin = userService.isAdmin(loginUser);
+//            if (admin){
+//                return questionSubmit.getUserId();
+//            }
+//            return loginUser.getId();
+//        }).collect(Collectors.toSet());//查出所有的用户的id
+        Set<Long> userIdSet=new HashSet<>();
+        for(QuestionSubmit questionSubmit:questionSubmitList){
+            if (userService.isAdmin(loginUser)){
+                //是管理员的情况
+                userIdSet.add(questionSubmit.getUserId());
+                continue;
+            }else{
+                userIdSet.add(loginUser.getId());
+                break;
+            }
+        }
         Map<Long, List<User>> userIdUserListMap = userService.listByIds(userIdSet).stream()
                 .collect(Collectors.groupingBy(User::getId));
-        // 填充信息
-        List<QuestionSubmitVO> questionSumbitVOList = questionSubmitList.stream().map(question -> {
-            QuestionSubmitVO questionVO = QuestionSubmitVO.objToVo(question);
-            Long userId = question.getUserId();
-            User user = null;
-            if (userIdUserListMap.containsKey(userId)) {
-                user = userIdUserListMap.get(userId).get(0);//唯一性
+
+        List<QuestionSubmitVO> questionSubmitVOList = new ArrayList<>();
+
+
+        for (QuestionSubmit questionSubmit:questionSubmitList){
+            Long userId = questionSubmit.getUserId();
+            if (userIdUserListMap.containsKey(userId)){
+                //包含在其中
+                QuestionSubmitVO questionVO = QuestionSubmitVO.objToVo(questionSubmit);
+                User user=userIdUserListMap.get(userId).get(0);
+                questionVO.setUserVO(userService.getUserVO(user));
+                questionSubmitVOList.add(questionVO);
             }
-            questionVO.setUserVO(userService.getUserVO(user));
-            return questionVO;
-        }).collect(Collectors.toList());
-        questionSubmitVOPage.setRecords(questionSumbitVOList);
+            questionSubmitVOPage.setRecords(questionSubmitVOList);
+            questionSubmitVOPage.setTotal(questionSubmitVOList.size());
+        }
+
+        // 填充信息
+
         return questionSubmitVOPage;
 //        List<QuestionSubmitVO> questionSubmitVOList = questionSubmitList.stream()
 //                .map(questionSubmit -> getQuestionSubmitVO(questionSubmit, loginUser))
@@ -169,6 +196,58 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
 //        return questionSubmitVOPage;
     }
 
+    @Override
+    public OwnQuestionSubmitResponse getMySubmitted(long id) {
+        if (id<0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR,"未取到题目的id");
+        }
+        QuestionSubmit questionSubmit = this.getById(id);
+        OwnQuestionSubmitResponse ownQuestionSubmitResponse = new OwnQuestionSubmitResponse();
+
+        String language = questionSubmit.getLanguage();
+        String code = questionSubmit.getCode();
+
+
+
+        Long questionId = questionSubmit.getQuestionId();
+        Question question = questionService.getById(questionId);
+        QuestionVo questionVo = QuestionVo.objToVo(question);
+
+
+
+        JudgeCase judgeCase = questionVo.getJudgeCase();
+        JudgeConfig judgeConfig = questionVo.getJudgeConfig();
+
+
+
+
+        ownQuestionSubmitResponse.setJudgeConfig(judgeConfig);
+        ownQuestionSubmitResponse.setJudgeCase(judgeCase);
+        ownQuestionSubmitResponse.setLanguage(language);
+        ownQuestionSubmitResponse.setCode(code);
+
+
+        return ownQuestionSubmitResponse;
+
+
+    }
+
+    @Override
+    public String getRightAnswer(long id) {
+        QuestionSubmit questionSubmit = this.getById(id);
+        Long questionId = questionSubmit.getQuestionId();
+
+        QueryWrapper<QuestionSubmit> questionSubmitQueryWrapper = new QueryWrapper<>();
+        questionSubmitQueryWrapper.eq("questionId",questionId);
+        List<QuestionSubmit> questionSubmitList = this.list(questionSubmitQueryWrapper);
+        for (QuestionSubmit question:questionSubmitList){
+            if (question.getStatus().equals(QuestionSubmitStatusEnum.SUCCEED)){
+                return question.getCode();
+            }
+            break;
+        }
+        return "抱歉，目前无人做对该题目";
+    }
 
 }
 

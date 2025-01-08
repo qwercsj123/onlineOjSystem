@@ -1,5 +1,6 @@
 package com.csj.ojbackend.controller;
 
+import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.csj.ojbackend.annotation.AuthCheck;
@@ -10,6 +11,8 @@ import com.csj.ojbackend.common.ResultUtils;
 import com.csj.ojbackend.constant.UserConstant;
 import com.csj.ojbackend.exception.BusinessException;
 import com.csj.ojbackend.exception.ThrowUtils;
+import com.csj.ojbackend.judge.model.ExecuteSandCodeRequest;
+import com.csj.ojbackend.judge.model.ExecuteSandCodeResponse;
 import com.csj.ojbackend.model.dto.question.*;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitAddRequest;
 import com.csj.ojbackend.model.dto.questionSubmit.QuestionSubmitQueryRequest;
@@ -23,6 +26,7 @@ import com.csj.ojbackend.service.QuestionSubmitService;
 import com.csj.ojbackend.service.UserService;
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -177,10 +181,6 @@ public class QuestionController {
         if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        User loginUser=userService.getLoginUser(request);
-        if(!loginUser.getId().equals(question.getUserId()) && !userService.isAdmin(loginUser)){
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
         return ResultUtils.success(question);
     }
 
@@ -321,5 +321,6 @@ public class QuestionController {
         // 返回脱敏信息
         return ResultUtils.success(questionSubmitService.getQuestionSubmitVOPage(questionSubmitPage, loginUser));
     }
+
 
 }

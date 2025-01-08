@@ -26,11 +26,15 @@ public class DefaultJudge implements JudgeStrategy {
         Long memory = judgeInfo.getMemory();
         Long time = judgeInfo.getTime();
         List<String> outputList = judgeContext.getOutputList();
+
+
         List<String> newOutputList=new ArrayList<>();
         for (int i=0;i<outputList.size();i++){
             String outputStr=outputList.get(i);
             newOutputList.add(outputStr.replace("\n",""));
         }
+
+
 
         Question question = judgeContext.getQuestion();
 
